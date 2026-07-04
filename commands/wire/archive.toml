@@ -50,8 +50,20 @@ Do not split it, do not inspect its output, and proceed immediately to the Workf
 ## Workflow Specification
 
 ---
+wire_schema: "1.0"
+command: lifecycle
+artifact: archive
+domain: archive
+release_types: []
+action_type: lifecycle
+logs_execution: true
+inputs:
+  required:
+    - name: release_folder
+      description: "Path to the release folder"
 description: Archive a completed Data Platform project
 argument-hint: <dashboard-folder>
+
 ---
 
 # Data Platform Archive Project Command

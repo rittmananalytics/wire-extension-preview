@@ -50,7 +50,15 @@ Do not split it, do not inspect its output, and proceed immediately to the Workf
 ## Workflow Specification
 
 ---
+wire_schema: "1.0"
+command: lifecycle
+artifact: new
+domain: new
+release_types: []
+action_type: lifecycle
+logs_execution: true
 description: Create a new Wire engagement or add a release to an existing engagement
+
 ---
 
 # Wire New Command
