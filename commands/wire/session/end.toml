@@ -1,0 +1,82 @@
+description = "DEPRECATED — session state is now written automatically after each Wire command completes"
+prompt = """
+# DEPRECATED — session state is now written automatically after each Wire command completes
+
+## User Input ((optional: release-folder))
+
+{{args}}
+
+## Path Configuration
+
+- **Projects**: `.wire` (project data and status files)
+
+When following the workflow specification below, resolve paths as follows:
+- `.wire/` in specs refers to the `.wire/` directory in the current repository
+- `TEMPLATES/` references refer to the templates section embedded at the end of this command
+
+## Telemetry
+
+# Telemetry — Anonymous Usage Tracking
+
+## Purpose
+
+Send one anonymous usage event so the Wire Framework team can understand adoption and usage patterns.
+
+> **Runtime note.** On the **Claude Code plugin**, telemetry is sent by a `UserPromptExpansion` hook (`hooks/wire-telemetry.sh`) that fires when a `/wire:` slash command is run — it does not appear in the console as a tool call. This in-command version is used only by the **Gemini CLI extension**, which has no hook system. The build script injects it into Gemini commands and skips it for Claude commands.
+
+## Send the event
+
+Run the following as a **single** Bash command, exactly as written. It:
+
+- skips everything if `WIRE_TELEMETRY=false`,
+- creates an anonymous id on first run (and sends an `identify` call),
+- sends the `track` event,
+- backgrounds the whole thing (`&`) with all output suppressed (`> /dev/null 2>&1`).
+
+Do not split it, do not inspect its output, and proceed immediately to the Workflow Specification. If any part fails (no network, no `curl`, no `python3`), it silently does nothing — telemetry must never block or fail the workflow.
+
+```bash
+[ "${WIRE_TELEMETRY:-true}" = "false" ] || ( mkdir -p ~/.wire; if [ ! -f ~/.wire/telemetry_id ]; then WIRE_UID=$(python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || uuidgen | tr '[:upper:]' '[:lower:]'); echo "$WIRE_UID" > ~/.wire/telemetry_id; curl -s -X POST https://api.segment.io/v1/identify -H "Content-Type: application/json" -d "{\"writeKey\":\"DxXwrT6ucDMRmouCsYDwthdChwDLsNYL\",\"userId\":\"$WIRE_UID\",\"traits\":{\"username\":\"$(whoami)\",\"hostname\":\"$(hostname)\",\"os\":\"$(uname -s)\",\"plugin_version\":\"4.0.0-preview\",\"first_seen\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}}" > /dev/null 2>&1; fi; WIRE_UID=$(cat ~/.wire/telemetry_id 2>/dev/null || echo unknown); curl -s -X POST https://api.segment.io/v1/track -H "Content-Type: application/json" -d "{\"writeKey\":\"DxXwrT6ucDMRmouCsYDwthdChwDLsNYL\",\"userId\":\"$WIRE_UID\",\"event\":\"wire_command\",\"properties\":{\"command\":\"session-end\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"git_repo\":\"$(git config --get remote.origin.url 2>/dev/null || echo unknown)\",\"git_branch\":\"$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)\",\"username\":\"$(whoami)\",\"hostname\":\"$(hostname)\",\"plugin_version\":\"4.0.0-preview\",\"os\":\"$(uname -s)\",\"runtime\":\"gemini\",\"autopilot\":\"false\"}}" > /dev/null 2>&1 ) > /dev/null 2>&1 &
+```
+
+## Rules
+
+1. **Never block** — runs in the background with all output suppressed.
+2. **Never fail the workflow** — if telemetry fails for any reason, silently continue.
+3. **Execute as a single Bash command** — do not split it.
+4. **Do not inspect the result** — fire and forget.
+5. **Proceed immediately** — continue to the Workflow Specification without waiting.
+
+## Workflow Specification
+
+---
+description: "DEPRECATED — session:end has been replaced by automatic state capture at the end of each Wire command"
+deprecated: true
+replaced_by: "Automatic session history rows written by each generate/validate/review command on completion"
+since: "3.4.20"
+---
+
+# ⚠️ Deprecated: /wire:session:end
+
+This command has been deprecated in Wire v3.4.20.
+
+## Why it was removed
+
+Telemetry analysis showed that `/wire:session:end` was almost never run. The command that was intended to close sessions and record what was done was the most-skipped command in the framework — meaning session history was almost never written. The design placed the responsibility for state persistence on the user, at a moment (end of session) when motivation is lowest.
+
+## What replaces it
+
+Every Wire generate, validate, and review command now **automatically appends a session history row** to `status.md` as its final step. State is written incrementally — after each artifact action — rather than batched at session end. This means session history is always up to date, even if the consultant closes their laptop without explicitly closing out.
+
+The `execution_log.md` (which every command has always written to) remains the authoritative audit trail of all commands run.
+
+**Research saving** — previously prompted by session:end — is now handled by the research persistence skill, which auto-activates when you perform significant technical research.
+
+## Migration
+
+- Remove any `/wire:session:end` invocations from your workflow
+- Session state will be written automatically after each Wire command completes
+- No action needed to preserve session history
+
+Execute the complete workflow as specified above.
+"""
