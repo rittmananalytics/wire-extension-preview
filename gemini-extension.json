@@ -1,6 +1,6 @@
 {
   "name": "wire-preview",
-  "version": "4.0.0-preview",
+  "version": "4.0.0-preview+82d0e237",
   "description": "The Wire Framework \u2014 AI-accelerated data platform delivery for the full lifecycle: requirements, design, development, testing, deployment, enablement",
   "mcpServers": {
     "atlassian": {
